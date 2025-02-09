@@ -1,0 +1,41 @@
+import inspect
+import json
+from importlib import import_module
+from pathlib import Path
+from typing import Generator
+
+from anser.entities.migration import Migration, Migrations
+
+
+def _convert_fil_path_to_path_module(path: str) -> str:
+    return path.replace('/', '.').replace('.py', '')
+
+
+class CollectMigrations:
+    def __init__(
+        self,
+        migrations_path: Path,
+    ) -> None:
+        self._migrations_path = migrations_path
+    
+    def _files(self) -> Generator[Path, None, None]:
+        for file in self._migrations_path.iterdir():
+            if file.suffix == '.py' and file.name != '__init__.py':
+                yield file
+    
+    def execute(self) -> Migrations:
+        migrations = []
+        
+        for file in self._files():
+            module_path = _convert_fil_path_to_path_module(file.absolute().as_posix())
+            module = import_module(module_path)
+            doc_module = inspect.getdoc(module)
+            
+            if doc_module is None:
+                raise ValueError(f'No docstring in file {file}')
+            
+            meta_data = json.loads(doc_module)
+            migration = Migration.from_dict(meta_data)
+            migrations.append(migration)
+        
+        return Migrations(migrations)

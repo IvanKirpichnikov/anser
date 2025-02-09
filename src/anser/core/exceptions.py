@@ -1,2 +1,0 @@
-class AnserException(Exception):
-    pass

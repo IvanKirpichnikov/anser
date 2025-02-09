@@ -1,0 +1,37 @@
+from contextlib import contextmanager
+from sqlite3 import connect, Connection
+from typing import Generator
+
+from anser.config import AnserConfig
+from anser.integrations.sqlite.migration_id_storage import \
+    SqliteMigrationIdStorage
+from anser.interfaces.ioc import IoC
+from anser.interfaces.migration_id_storage import MigrationIdStorage
+
+
+class IoCSqlite(IoC):
+    def __init__(
+        self,
+        config: AnserConfig,
+    ) -> None:
+        self.config = config
+        self._cache_connection = None
+    
+    @contextmanager
+    def _connection(self) -> Generator[Connection, None, None]:
+        if self._cache_connection:
+            yield self._cache_connection
+        else:
+            connection = connect(self.config.url)
+            try:
+                yield connection
+            finally:
+                connection.close()
+    
+    @contextmanager
+    def migration_id_storage(self) -> Generator[MigrationIdStorage, None, None]:
+        with self._connection() as connection:
+            yield SqliteMigrationIdStorage(
+                config=self.config,
+                connection=connection,
+            )

@@ -1,0 +1,52 @@
+from hashlib import sha1
+from typing import NewType
+
+
+MigrationId = NewType('MigrationId', str)
+
+
+def create_migration_id() -> MigrationId:
+    migration_id = sha1().hexdigest()[:8]
+    return MigrationId(migration_id)
+
+
+class Migration:
+    def __init__(
+        self,
+        id: MigrationId,
+        name: str,
+        message: str | None = None,
+        parent_id: MigrationId | None = None,
+    ) -> None:
+        self.id = id
+        self.name = name
+        self.message = message
+        self.parent_id = parent_id
+
+
+class Migrations:
+    def __init__(
+        self,
+        migrations: list[Migration],
+    ) -> None:
+        self._list_migrations = migrations
+    
+    def get_by_offset(
+        self,
+        current_id: MigrationId,
+        offset: int,
+    ) -> Migration | None:
+        index = 0
+        while True:
+            migration = self._list_migrations[index]
+            if migration.id == current_id:
+                break
+            
+            index += 1
+        
+        return self._list_migrations[index + offset]
+    
+    def get_by_id(self, migration_id: MigrationId) -> Migration | None:
+        for migration in self._list_migrations:
+            if migration.id == migration_id:
+                return migration

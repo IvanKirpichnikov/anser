@@ -1,0 +1,2 @@
+class AnserError(Exception):
+    pass

@@ -15,7 +15,7 @@ class AnserConfig:
     migrations: AnserMigrationsConfig
 
 
-def build_config(path: Path) -> AnserConfig:
+def build_config(path: Path) -> dict[str, AnserConfig]:
     with open(path, 'rb') as file:
         toml_config = tomli.load(file)['anser']
     
